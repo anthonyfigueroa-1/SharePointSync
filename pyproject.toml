@@ -1,0 +1,27 @@
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12"]
+build-backend = "uv_build"
+
+[project]
+name = "SharePoint-Sync"
+version = "0.1.0"
+description = "Script to help with syncing documents in SharePoint to a Postgres database"
+requires-python = ">=3.14"
+readme = "README.md"
+dependencies = [
+    "alembic>=1.18.4",
+    "azure-identity>=1.25.3",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "openai>=2.32.0",
+    "psycopg[binary]>=3.3.3",
+    "pydantic-extra-types>=2.11.1",
+    "pydantic-settings>=2.13.1",
+    "pypdf[image]>=6.10.2",
+    "python-docx>=1.2.0",
+    "sqlalchemy>=2.0.49",
+]
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = ["ai", "sharepoint", "sql"]
