@@ -55,6 +55,9 @@ After defining the ENV variables. You will need to ensure that you have a Micros
 In the root of the project, run...
 
 ```
+uv run alembic revision --autogenerate -m "Initial Schema" && uv run alembic upgrade head
+# The above command is to generate a script, using Alembic to be able to have Alembic create the table in the database url stated in the .env file. And the second command actually runs the script to create the table.
+
 uv run main.py
 ```
 
