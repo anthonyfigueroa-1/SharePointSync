@@ -10,11 +10,11 @@ import httpx
 from loguru import logger
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from config import settings
-from sql import models
-from sql.database import get_db
+from sql_app.models import SharePointSolutionDoc
+from sql_app.database import get_db
 
 sem = asyncio.Semaphore(5)
 
@@ -128,11 +128,21 @@ class File(BaseModel):
             if cleaned_path:
                 self.path = cleaned_path
 
-    async def add_file_to_database(self) -> None:
-        entry = models.SolutionsDoc()
+    def add_file_to_database(self, db: Session) -> None:
+        file = db.execute(
+            select(SharePointSolutionDoc).where(
+                SharePointSolutionDoc.sp_id == self.id
+            )
+        ).scalar_one_or_none()
+        if file:
+            self.update_file_to_database(file)
+            return
+
+        entry = SharePointSolutionDoc()
 
         entry.sp_id = self.id
         entry.file_type = self.file_extension
+        entry.group_id = settings.group_id
         entry.name = self.name
         entry.content_text = self.text_content
         entry.img_metadata = self.images_metadata
@@ -141,30 +151,15 @@ class File(BaseModel):
         entry.file_path = self.path
         entry.web_url = self.web_url
         entry.created_datetime = self.created_datetime
-        entry.last_modified_datetime = self.last_modified_datetime
+        entry.last_modified = self.last_modified_datetime
         entry.last_synced = datetime.now(settings.tz)
 
-        async with get_db() as db:
-            file_id = await db.execute(
-                select(models.SolutionsDoc.id).where(
-                    models.SolutionsDoc.sp_id == self.id
-                )
-            )
-            file_id = file_id.scalar_one_or_none()
-            if file_id:
-                await self.update_file_to_database(db, file_id)
-                return
+        db.add(entry)
+        logger.success(f"Added file {self.name} to the database")
 
-            db.add(entry)
-            await db.commit()
-            await db.refresh(entry)
-            logger.success(f"Added file {self.name} to the database")
-
-    async def update_file_to_database(
-        self, db: AsyncSession, file_id: int
+    def update_file_to_database(
+        self, file: SharePointSolutionDoc
     ) -> None:
-        file = await db.get(models.SolutionsDoc, file_id)
-
         file.name = self.name
         file.content_text = self.text_content
         file.img_metadata = self.images_metadata
@@ -172,18 +167,16 @@ class File(BaseModel):
         file.summary = self.summary
         file.file_path = self.path
         file.web_url = self.web_url
-        file.last_modified_datetime = self.last_modified_datetime
+        file.last_modified = self.last_modified_datetime
         file.last_synced = datetime.now(settings.tz)
 
-        await db.commit()
-        await db.refresh(file)
         logger.success(f"Updated file {self.name} to the database")
 
-    async def check_if_should_update_or_add(self) -> bool:
-        async with get_db() as db:
-            db_entry_id = await db.execute(
-                select(models.SolutionsDoc.id).where(
-                    models.SolutionsDoc.sp_id == self.id
+    def check_if_should_update(self) -> bool:
+        with get_db() as db:
+            db_entry_id = db.execute(
+                select(SharePointSolutionDoc.id).where(
+                    SharePointSolutionDoc.sp_id == self.id
                 )
             )
             db_entry_id = db_entry_id.scalar_one_or_none()
@@ -191,7 +184,7 @@ class File(BaseModel):
             if not db_entry_id:
                 return True
 
-            db_entry = await db.get(models.SolutionsDoc, db_entry_id)
+            db_entry = db.get(SharePointSolutionDoc, db_entry_id)
 
         if self.last_modified_datetime >= db_entry.last_synced:
             return True

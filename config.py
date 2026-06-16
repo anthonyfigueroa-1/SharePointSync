@@ -16,9 +16,7 @@ class Settings(BaseSettings):
 
     tenant_id: SecretStr
 
-    database_url: SecretStr
-    solution_docs_table_name: str = "sharepoint_solution_docs"
-    solution_docs_table_schema: str = "public"
+    group_id: int
 
     sharepoint_domain: str
     sharepoint_site_name: str
