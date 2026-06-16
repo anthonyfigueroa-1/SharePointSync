@@ -5,6 +5,7 @@ from loguru import logger
 
 from ai.docx import get_metadata_and_keywords
 from sharepoint.sharepoint import get_sharepoint_files
+from sql_app.database import get_db
 
 
 async def main():
@@ -17,9 +18,11 @@ async def main():
 
     await get_metadata_and_keywords(files)
 
-    async with asyncio.TaskGroup() as tg:
+    with get_db() as db:
         for file in files:
-            tg.create_task(file.add_file_to_database())
+            file.add_file_to_database(db)
+
+        db.commit()
 
 
 if __name__ == "__main__":

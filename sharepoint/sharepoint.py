@@ -27,7 +27,7 @@ async def get_sharepoint_files() -> list[File]:
     )
     files = grab_all_files(header, drive_id, root_children)
 
-    files = await clean_redundant_files(files)
+    files = clean_redundant_files(files)
 
     if not files:
         return None
@@ -170,10 +170,10 @@ def grab_all_files(
     return files
 
 
-async def clean_redundant_files(files: list[File]) -> list[File] | None:
+def clean_redundant_files(files: list[File]) -> list[File] | None:
     cleaned_files = []
     for file in files:
-        should_add_or_update = await file.check_if_should_update_or_add()
+        should_add_or_update = file.check_if_should_update()
         if should_add_or_update:
             cleaned_files.append(file)
 
