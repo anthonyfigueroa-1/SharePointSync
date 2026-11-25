@@ -24,8 +24,7 @@ dependencies = [
 ]
 
 [tool.uv.build-backend]
-module-root = ""
-module-name = ["ai", "sharepoint", "sql"]
+module-name = "app"
 
 [tool.uv.workspace]
 members = [

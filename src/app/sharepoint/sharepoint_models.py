@@ -194,7 +194,7 @@ class File(BaseModel):
             "%a, %b %d, %Y at %H:%M",
         )
         last_modified_str = datetime.strftime(
-            db_entry.last_modified_datetime.astimezone(tz=settings.tz),
+            db_entry.last_modified.astimezone(tz=settings.tz),
             "%a, %b %d, %Y at %H:%M",
         )
         logger.info(
